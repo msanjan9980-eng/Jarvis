@@ -1,5 +1,8 @@
 ﻿"""Calendar read + conflict detection + event update."""
 from datetime import datetime, timedelta
+from zoneinfo import ZoneInfo
+
+IST = ZoneInfo("Asia/Kolkata")
 from jarvis.auth import get_calendar_service
 
 # How far ahead to look for conflicts (days)
@@ -12,7 +15,7 @@ def _parse(dt_str):
         return None
     # Google returns e.g. 2026-10-16T10:00:00+05:30 or ...Z
     s = dt_str.replace("Z", "+00:00")
-    return datetime.fromisoformat(s)
+    return datetime.fromisoformat(s).astimezone(IST)
 
 
 def list_calendars():
