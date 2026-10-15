@@ -18,3 +18,5 @@ jarvis/logs/
 *.bak
 
 config.json
+
+*.pre-tier1
