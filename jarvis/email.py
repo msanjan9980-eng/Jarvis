@@ -94,3 +94,41 @@ def list_replies_for_thread(proposal_msg_id):
         })
     out.sort(key=lambda x: x["internal_date"])
     return out
+
+
+def send_confirmation(to_email, summary, new_start, new_end, in_reply_to_msg_id=None):
+    """Send a confirmation reply after the event has been moved.
+
+    Places the confirmation in the same Gmail thread as the original proposal
+    so the conversation stays coherent.
+    """
+    svc = get_gmail_service()
+    subject = f"{SUBJECT_MARKER} Confirmed: {summary}"
+    body = f"""Hi,
+
+Confirmed. The event "{summary}" has been moved to:
+
+    {new_start:%A %d %b, %H:%M} - {new_end:%H:%M}
+
+No further action needed.
+
+— Jarvis
+"""
+    msg = MIMEText(body)
+    msg["to"] = to_email
+    msg["subject"] = subject
+    msg["from"] = "me"
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+
+    send_body = {"raw": raw}
+    if in_reply_to_msg_id:
+        try:
+            orig = svc.users().messages().get(userId="me", id=in_reply_to_msg_id, format="metadata").execute()
+            tid = orig.get("threadId")
+            if tid:
+                send_body["threadId"] = tid
+        except Exception:
+            pass
+
+    sent = execute_with_retry(svc.users().messages().send(userId="me", body=send_body))
+    return sent["id"]

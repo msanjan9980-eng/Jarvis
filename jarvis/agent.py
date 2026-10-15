@@ -14,7 +14,7 @@ import sys
 from datetime import datetime, timedelta
 
 from jarvis.calendar import list_events, find_conflicts, pick_recipient
-from jarvis.email import send_proposal, list_replies, list_replies_for_thread
+from jarvis.email import send_proposal, list_replies, list_replies_for_thread, send_confirmation
 from jarvis.parse import decide_from_replies, parse_reply
 from jarvis import store
 from jarvis import config
@@ -310,6 +310,13 @@ def _do_move(p, new_start):
               "end": {"dateTime": (new_start + dur).isoformat(), "timeZone": "Asia/Kolkata"}},
     ).execute()
     _log(f"    moved '{p['summary']}' to {new_start:%a %d %b %H:%M}")
+    try:
+        recipient = p.get("recipient") or MY_EMAIL
+        send_confirmation(recipient, p["summary"], new_start, new_start + dur,
+                          in_reply_to_msg_id=p.get("proposal_msg_id"))
+        _log(f"    sent confirmation to {recipient}")
+    except Exception as e:
+        _log(f"    confirmation send failed: {e!r}")
 
 
 
