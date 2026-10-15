@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from flask import Flask, Response, jsonify, render_template_string, request
 
 from jarvis.agent import propose_only, check_only
-from jarvis.calendar import list_events, find_conflicts
+from jarvis.calendar import list_events, find_conflicts, pick_recipient
 from jarvis.email import send_proposal
 from jarvis.auth import get_calendar_service
 from jarvis import store
@@ -255,7 +255,9 @@ def api_propose():
         duration = a["end"] - a["start"]
         new_end = new_start + duration
         print(f"[webui] sending proposal for '{a['summary']}' -> {new_start:%a %d %b %H:%M}")
-        msg_id = send_proposal(config.my_email(), a, new_start, new_end)
+        recipient = pick_recipient(a, config.my_email())
+        print(f"[webui] recipient: {recipient}")
+        msg_id = send_proposal(recipient, a, new_start, new_end)
         store.add_pending({
             "event_id": a["id"],
             "calendar_id": a["calendar_id"],

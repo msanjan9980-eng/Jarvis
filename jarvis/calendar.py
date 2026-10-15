@@ -77,3 +77,16 @@ def print_conflicts(conflicts):
         print(f"  [{a['summary']}] {a['start']:%Y-%m-%d %H:%M} - {a['end']:%H:%M}  ({a['calendar']})")
         print(f"  [{b['summary']}] {b['start']:%Y-%m-%d %H:%M} - {b['end']:%H:%M}  ({b['calendar']})")
         print()
+
+
+def pick_recipient(event, me):
+    """Choose who to email about this event.
+
+    Returns the first attendee that isn't 'me' (case-insensitive).
+    Falls back to 'me' if the event has no other attendees, which keeps
+    the self-loop demo working when you have no guests on the event.
+    """
+    me_l = (me or "").lower()
+    others = [a for a in event.get("attendees", [])
+              if a and a.lower() != me_l]
+    return others[0] if others else me

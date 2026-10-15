@@ -13,7 +13,7 @@ import os
 import sys
 from datetime import datetime, timedelta
 
-from jarvis.calendar import list_events, find_conflicts
+from jarvis.calendar import list_events, find_conflicts, pick_recipient
 from jarvis.email import send_proposal, list_replies, list_replies_for_thread
 from jarvis.parse import decide_from_replies, parse_reply
 from jarvis import store
@@ -195,7 +195,12 @@ def propose_only():
             _log(f"  skip: a proposal for '{a['summary']}' is already pending")
             continue
         new_start, new_end = propose_new_time(a, b)
-        msg_id = send_proposal(MY_EMAIL, a, new_start, new_end)
+        recipient = pick_recipient(a, MY_EMAIL)
+        if recipient == MY_EMAIL:
+            _log(f"  recipient: (no other attendees) {recipient}")
+        else:
+            _log(f"  recipient: {recipient} (from attendees)")
+        msg_id = send_proposal(recipient, a, new_start, new_end)
         _log(f"  sent proposal id={msg_id} proposing {new_start:%a %d %b %H:%M}")
         store.add_pending({
             "event_id": a["id"],
@@ -203,6 +208,7 @@ def propose_only():
             "summary": a["summary"],
             "new_start_iso": new_start.isoformat(),
             "proposal_msg_id": msg_id,
+            "recipient": recipient,
         })
     _log(f"  saved {len(conflicts)} pending proposal(s)")
     print()
