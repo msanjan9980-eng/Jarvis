@@ -1,8 +1,8 @@
 ﻿"""Calendar read + conflict detection + event update."""
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
+from datetime import timezone as _tz
 
-IST = ZoneInfo("Asia/Kolkata")
+IST = _tz(timedelta(hours=5, minutes=30))  # Asia/Kolkata, no DST
 from jarvis.auth import get_calendar_service
 
 # How far ahead to look for conflicts (days)
