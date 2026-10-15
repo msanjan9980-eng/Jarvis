@@ -14,7 +14,7 @@ import sys
 from datetime import datetime, timedelta
 
 from jarvis.calendar import list_events, find_conflicts, pick_recipient
-from jarvis.email import send_proposal, list_replies, list_replies_for_thread, send_confirmation
+from jarvis.email import send_proposal, list_replies, list_replies_for_thread, send_confirmation, send_decline_acknowledgment
 from jarvis.parse import decide_from_replies, parse_reply
 from jarvis import store
 from jarvis import config
@@ -243,6 +243,13 @@ def check_only():
             continue
 
         if d == "decline":
+            try:
+                recipient = p.get("recipient") or MY_EMAIL
+                send_decline_acknowledgment(recipient, p["summary"],
+                                            in_reply_to_msg_id=p.get("proposal_msg_id"))
+                _log(f"    sent decline acknowledgment to {recipient}")
+            except Exception as e:
+                _log(f"    decline acknowledgment failed: {e!r}")
             store.mark_resolved(p["proposal_msg_id"], "declined")
             store.log_escalation({"event": p["summary"], "reason": "declined",
                                   "proposal_msg_id": p["proposal_msg_id"]})

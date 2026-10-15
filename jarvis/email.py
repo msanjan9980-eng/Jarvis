@@ -132,3 +132,39 @@ No further action needed.
 
     sent = execute_with_retry(svc.users().messages().send(userId="me", body=send_body))
     return sent["id"]
+
+
+def send_decline_acknowledgment(to_email, summary, in_reply_to_msg_id=None):
+    """Reply when the recipient declined. Keeps the thread open and asks
+    for an alternative time so the negotiation can continue."""
+    svc = get_gmail_service()
+    subject = f"{SUBJECT_MARKER} Re: {summary} — noted, will follow up"
+    body = f"""Hi,
+
+Thanks for letting me know. Sorry the proposed time didn't work for "{summary}".
+
+I'll look into other options and get back to you shortly.
+
+In the meantime — are there any times that would work better for you?
+Just reply with a suggested slot and I'll re-propose it.
+
+— Jarvis
+"""
+    msg = MIMEText(body)
+    msg["to"] = to_email
+    msg["subject"] = subject
+    msg["from"] = "me"
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+
+    send_body = {"raw": raw}
+    if in_reply_to_msg_id:
+        try:
+            orig = svc.users().messages().get(userId="me", id=in_reply_to_msg_id, format="metadata").execute()
+            tid = orig.get("threadId")
+            if tid:
+                send_body["threadId"] = tid
+        except Exception:
+            pass
+
+    sent = execute_with_retry(svc.users().messages().send(userId="me", body=send_body))
+    return sent["id"]

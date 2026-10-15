@@ -19,7 +19,7 @@ from flask import Flask, Response, jsonify, redirect, render_template_string, re
 
 from jarvis.agent import propose_only, check_only
 from jarvis.calendar import list_events, find_conflicts, pick_recipient
-from jarvis.email import send_proposal, send_confirmation
+from jarvis.email import send_proposal, send_confirmation, send_decline_acknowledgment
 from jarvis.auth import get_calendar_service
 from jarvis import store, config
 
@@ -683,6 +683,13 @@ def api_check():
                 except Exception as e:
                     print(f"[ui] confirmation send failed: {e!r}")
             elif d["decision"] == "decline":
+                try:
+                    recipient = p.get("recipient") or config.my_email()
+                    send_decline_acknowledgment(recipient, p["summary"],
+                                                in_reply_to_msg_id=p.get("proposal_msg_id"))
+                    print(f"[ui] sent decline acknowledgment to {recipient}")
+                except Exception as e:
+                    print(f"[ui] decline acknowledgment failed: {e!r}")
                 store.mark_resolved(p["proposal_msg_id"], "declined")
                 store.log_escalation({"event": p["summary"], "reason": "declined", "proposal_msg_id": p["proposal_msg_id"]})
             else:
