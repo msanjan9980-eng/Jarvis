@@ -87,3 +87,22 @@ def prune_resolved(calendar_service):
         kept = kept[-30:]
     save_pending(kept)
     return len(entries) - len(kept)
+
+
+def add_counter_proposal(original_pending, new_start, new_msg_id, reference):
+    """When a user counters with a new time, create a round-2 pending entry.
+    Marks the original entry as counter_proposed so it isn't reprocessed."""
+    mark_resolved(original_pending["proposal_msg_id"], "counter_proposed")
+    entries = load_pending()
+    entries.append({
+        "event_id": original_pending["event_id"],
+        "calendar_id": original_pending["calendar_id"],
+        "summary": original_pending["summary"],
+        "new_start_iso": new_start.isoformat(),
+        "proposal_msg_id": new_msg_id,
+        "round": 2,
+        "counter_of": original_pending["proposal_msg_id"],
+        "created_at": _now(),
+        "status": "pending",
+    })
+    save_pending(entries)
