@@ -1,0 +1,16 @@
+﻿.venv/
+__pycache__/
+*.pyc
+
+# secrets — never commit these
+credentials.json
+token.json
+
+# local state
+jarvis/pending.json
+jarvis/escalations.json
+jarvis/logs/
+
+# misc
+.DS_Store
+*.mp4

@@ -1,0 +1,29 @@
+﻿=== JARVIS DEMO SCRIPT ===
+
+SETUP:
+- Calendar tab showing Team sync / Design review / Standup overlapping
+- Gmail tab open
+- PowerShell at C:\JARVIS 2.0 with venv active
+- Fallback video ready
+
+INTRO:
+"Jarvis detects conflicts across all my Google Calendars, proposes a new time
+by email, reads the reply, and either reschedules or escalates. Two-phase:
+propose, then check. It never guesses."
+
+LIVE DEMO:
+1. Point at the 3 overlapping events.
+2. Run: python -m jarvis.agent propose
+3. Switch to Gmail, reply "Yes" to newest [JARVIS-RESCHEDULE] email.
+4. Run: python -m jarvis.agent check
+5. Switch to Calendar, refresh, show moved event.
+
+FAILURE:
+Run: python -m jarvis.agent demo --path unclear
+"It doesnt guess. It escalates. Same for declined, no_reply, counter."
+
+CLOSE:
+"Real Google Calendar + Gmail APIs. Regex reply parser. Thread-scoped.
+Unit tested. Questions?"
+
+IF BROKEN: play jarvis_demo_fallback.mp4
