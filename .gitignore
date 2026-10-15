@@ -20,3 +20,5 @@ jarvis/logs/
 config.json
 
 *.pre-tier1
+
+*.pre-recipient
