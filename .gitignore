@@ -16,3 +16,5 @@ jarvis/logs/
 *.mp4
 
 *.bak
+
+config.json

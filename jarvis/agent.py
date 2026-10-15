@@ -17,12 +17,13 @@ from jarvis.calendar import list_events, find_conflicts
 from jarvis.email import send_proposal, list_replies, list_replies_for_thread
 from jarvis.parse import decide_from_replies, parse_reply
 from jarvis import store
+from jarvis import config
 
 import json
 
 PENDING_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pending.json")
 
-MY_EMAIL = "msanjan9980@gmail.com"
+MY_EMAIL = config.my_email()
 
 
 LOG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
@@ -165,6 +166,16 @@ def _load_pending():
         return json.load(f)
 
 
+
+
+def _has_pending_proposal(event_id):
+    """True if a proposal for this event is still awaiting a reply."""
+    for p in store.pending_only():
+        if p.get("event_id") == event_id:
+            return True
+    return False
+
+
 def propose_only():
     """Phase 1: find conflicts, send proposals, save pending state."""
     _log("PHASE 1: propose")
@@ -180,6 +191,9 @@ def propose_only():
     pending = []
     for a, b in conflicts:
         _log(f"  conflict: '{a['summary']}' vs '{b['summary']}'")
+        if _has_pending_proposal(a["id"]):
+            _log(f"  skip: a proposal for '{a['summary']}' is already pending")
+            continue
         new_start, new_end = propose_new_time(a, b)
         msg_id = send_proposal(MY_EMAIL, a, new_start, new_end)
         _log(f"  sent proposal id={msg_id} proposing {new_start:%a %d %b %H:%M}")
@@ -292,6 +306,32 @@ def _do_move(p, new_start):
     _log(f"    moved '{p['summary']}' to {new_start:%a %d %b %H:%M}")
 
 
+
+
+def watch(interval=60, cycles=None):
+    """Run propose + check in a loop. Ctrl+C to stop."""
+    import time
+    n = 0
+    try:
+        while cycles is None or n < cycles:
+            n += 1
+            _log(f"=== WATCH CYCLE {n} ===")
+            try:
+                propose_only()
+            except Exception as e:
+                _log(f"  propose failed: {e!r}")
+            try:
+                check_only()
+            except Exception as e:
+                _log(f"  check failed: {e!r}")
+            if cycles is not None and n >= cycles:
+                break
+            _log(f"  sleeping {interval}s (Ctrl+C to stop)...")
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        _log("watch stopped by user")
+
+
 def main():
     parser = argparse.ArgumentParser(prog="jarvis.agent")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -304,6 +344,10 @@ def main():
     sub.add_parser("check", help="phase 2: read replies and act")
 
     sub.add_parser("escalations", help="list logged escalations")
+
+    p_watch = sub.add_parser("watch", help="run propose+check on a loop")
+    p_watch.add_argument("--interval", type=int, default=60, help="seconds between cycles")
+    p_watch.add_argument("--cycles", type=int, default=None, help="stop after N cycles")
 
     p_demo = sub.add_parser("demo", help="force a failure path")
     p_demo.add_argument("--path", required=True, choices=list(DEMO_PATHS))
@@ -320,6 +364,8 @@ def main():
     elif args.cmd == "escalations":
         import json as _j
         print(_j.dumps(store.list_escalations(), indent=2, default=str))
+    elif args.cmd == "watch":
+        watch(interval=args.interval, cycles=args.cycles)
     elif args.cmd == "demo":
         demo(args.path)
 

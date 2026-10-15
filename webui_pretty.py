@@ -18,9 +18,10 @@ from jarvis.calendar import list_events, find_conflicts
 from jarvis.email import send_proposal
 from jarvis.auth import get_calendar_service
 from jarvis import store
+from jarvis import config
 
 app = Flask(__name__)
-MY_EMAIL = "msanjan9980@gmail.com"
+MY_EMAIL = config.my_email()
 
 _lock = threading.Lock()
 _log_q = queue.Queue()
