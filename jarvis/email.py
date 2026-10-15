@@ -2,6 +2,7 @@
 import base64
 from email.mime.text import MIMEText
 from jarvis.auth import get_gmail_service
+from jarvis.retry import execute_with_retry
 
 SUBJECT_MARKER = "[JARVIS-RESCHEDULE]"
 
@@ -32,7 +33,7 @@ Please reply with one of:
     msg["from"] = "me"
 
     raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-    sent = svc.users().messages().send(userId="me", body={"raw": raw}).execute()
+    sent = execute_with_retry(svc.users().messages().send(userId="me", body={"raw": raw}))
     return sent["id"]
 
 
